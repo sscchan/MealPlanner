@@ -1,0 +1,46 @@
+Dish (Unique ID),Carb,Protein,Veg,Fruit
+Pumpkin Porriage without Mince,Porriage,#N/A,Pumpkin,#N/A
+Pumpkin Porriage with Pork Mince,Porriage,Pork,Pumpkin,#N/A
+Pumpkin Porriage with Beef Mince,Porriage,Beef,Pumpkin,#N/A
+Penne Pasta without Mince,Pasta,#N/A,#N/A,#N/A
+Penne Pasta with Beef Mince,Pasta,Beef,#N/A,#N/A
+Fusilli Pasta without Mince,Pasta,#N/A,#N/A,#N/A
+Penne Pasta with Beef Mince,Pasta,Beef,#N/A,#N/A
+Sausage Roll with Beef Filling,Pastry,Beef,#N/A,#N/A
+Sausage Roll with Beef & Veg Filling,Pastry,Beef,Zucchini,#N/A
+Soy Pork Belly,#N/A,Pork,#N/A,#N/A
+Soy Pork Belly with Boiled Egg,#N/A,"Pork, Boiled Egg",#N/A,#N/A
+Instant Noodle,Wheat Noodle,#N/A,#N/A,#N/A
+Pancake,Pancake,Coconut,#N/A,#N/A
+Pancake with Banana Topping,Pancake,Coconut,#N/A,Banana
+Pancake with Sliced Apple Topping,Pancake,Coconut,#N/A,Apple
+Scramble Egg with Baked Beans & Rice,"Rice, Baked Beans",Egg,#N/A,#N/A
+Baked Cinnamon Apple Slices,#N/A,#N/A,#N/A,Apple
+Banana,#N/A,#N/A,#N/A,Banana
+Braised Potato,Potato,#N/A,#N/A,#N/A
+Stirfry Beef,#N/A,Beef,#N/A,#N/A
+Stirfry Chicken,#N/A,Chicken,#N/A,#N/A
+Stirfry Vegetables (Multiple),#N/A,#N/A,"Carrot, Cabbage, Bok Choy, Onion",#N/A
+Papaya,#N/A,#N/A,#N/A,Papaya
+Watermelon,#N/A,#N/A,#N/A,Watermelon
+Orange,#N/A,#N/A,#N/A,"Orange, Mandarin"
+Mandarin,#N/A,#N/A,#N/A,#N/A
+Rice,Rice,#N/A,#N/A,#N/A
+Stirfry Hokein Noodle,Wheat Noodle,#N/A,#N/A,#N/A
+Stir Fry Pad Thai Noodle,Pad Thai Noodle,#N/A,#N/A,#N/A
+Fried Rice,Rice,#N/A,#N/A,#N/A
+Cherry Tomatoes,#N/A,#N/A,#N/A,Tomato
+Kiwi,#N/A,#N/A,#N/A,Kiwi
+Avocado,#N/A,#N/A,#N/A,Avacado
+Baked Sweet Potato,Potato,#N/A,#N/A,#N/A
+Baked Potato,Potato,#N/A,#N/A,#N/A
+Blanched Bok Choi,#N/A,#N/A,Bok Choi,#N/A
+Honeydew,#N/A,#N/A,#N/A,Honeydew
+Rockmelon,#N/A,#N/A,#N/A,Rockmelon
+Strawberry,#N/A,#N/A,#N/A,Strawberry
+Watermelon,#N/A,#N/A,#N/A,Watermelon
+Pear,#N/A,#N/A,#N/A,Pear
+Brussel Sprouts,#N/A,#N/A,Brussel Sprouts,#N/A
+Cabbage,#N/A,#N/A,Cabbage,#N/A
+Broccoli,#N/A,#N/A,Broccoli,#N/A
+Cauliflower ,#N/A,#N/A,Cauliflower ,#N/A
