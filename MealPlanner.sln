@@ -7,9 +7,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MealPlanner.WebApplication"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MealPlanner.Application", "MealPlanner.Application\MealPlanner.Application.csproj", "{6EF649F0-99AA-416C-876C-E886AD189412}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MealPlanner.Infrastructure", "MealPlanner.Infrastructure\MealPlanner.Infrastructure.csproj", "{EEC0CC71-FB80-47C0-A981-6CADE42E2E6C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MealPlanner.Infrastructure", "MealPlanner.Infrastructure\MealPlanner.Infrastructure.csproj", "{EEC0CC71-FB80-47C0-A981-6CADE42E2E6C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MealPlanner.Tests", "MealPlanner.Tests\MealPlanner.Tests.csproj", "{BFCCC659-3C4C-4E2A-8957-8C5446A77DAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MealPlanner.Tests", "MealPlanner.Tests\MealPlanner.Tests.csproj", "{BFCCC659-3C4C-4E2A-8957-8C5446A77DAB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{736FA9A8-3252-494A-BC35-C52F6E12F136}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

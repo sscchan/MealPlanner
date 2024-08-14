@@ -2,7 +2,7 @@
 using CsvHelper.Configuration;
 using MealPlanner.Application.Entities;
 using MealPlanner.Application.Repositories;
-using MealPlanner.Infrastructure.Repositories.DTOs;
+using MealPlanner.Infrastructure.Repositories.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -44,7 +44,7 @@ namespace MealPlanner.Infrastructure.Repositories
         private Dish toDish(CsvDishDto csvDishDto)
         {
             string[] dishcomponentSeparatorString = { "," };
-            var dishcomponentStringSplitOptions = StringSplitOptions.RemoveEmptyEntries & StringSplitOptions.TrimEntries;
+            var dishcomponentStringSplitOptions = StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries;
             Func<string, IEnumerable<string>> splitComponentString = (
                 cs => cs
                     .Split(dishcomponentSeparatorString, dishcomponentStringSplitOptions)

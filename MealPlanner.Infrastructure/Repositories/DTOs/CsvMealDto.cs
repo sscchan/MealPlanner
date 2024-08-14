@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MealPlanner.Infrastructure.Repositories.DTOs
+namespace MealPlanner.Infrastructure.Repositories.Dtos
 {
     internal class CsvMealDto
     {

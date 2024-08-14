@@ -1,4 +1,5 @@
 using MealPlanner.Application.Repositories;
+using MealPlanner.Application.Services;
 using MealPlanner.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,7 @@ builder.Services.AddSwaggerGen();
 
 // Dependency injection
 builder.Services.AddSingleton<IDishRepository>(_ => new CsvFileDishRepository(string.Empty));
+builder.Services.AddScoped<IMealPlannerService, MealPlannerService>();
 
 var app = builder.Build();
 
