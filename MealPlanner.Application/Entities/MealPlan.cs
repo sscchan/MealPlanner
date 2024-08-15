@@ -14,5 +14,13 @@ namespace MealPlanner.Application.Entities
         {
             Meals.Add(meal);
         }
+
+        public void RemoveIfExists(DateOnly date, MealType mealType)
+        {
+            var mealToRemove = Meals.FirstOrDefault(m => m.Date == date && m.MealType == mealType);
+            if (mealToRemove != null) {
+                Meals.Remove(mealToRemove);
+            }
+        }
     }
 }

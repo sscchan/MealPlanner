@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace MealPlanner.WebApplication.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/Dishes")]
     public class DishesController : ControllerBase
     {
         private IDishDataManagementService _dishDataManagementService;
