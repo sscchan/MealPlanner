@@ -1,4 +1,4 @@
-﻿using MealPlanner.Application.Repositories;
+﻿using MealPlanner.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MealPlanner.WebApplication.Controllers
@@ -7,17 +7,24 @@ namespace MealPlanner.WebApplication.Controllers
     [Route("api/[controller]")]
     public class DishesController : ControllerBase
     {
-        private IDishRepository _dishRepository;
+        private IDishDataManagementService _dishDataManagementService;
 
-        public DishesController(IDishRepository dishRepository)
+        public DishesController(IDishDataManagementService dishDataManagementService)
         {
-            _dishRepository = dishRepository;
+            _dishDataManagementService = dishDataManagementService;
         }
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            return new JsonResult(await _dishRepository.GetAll().ToListAsync());
-        }             
+            return new JsonResult(await _dishDataManagementService.GetDishes().ToListAsync());
+        }
+
+        [HttpGet]
+        [Route("Components")]
+        public async Task<IActionResult> GetDishesComponents()
+        {
+            return new JsonResult(await _dishDataManagementService.GetDishComponents());
+        }
     }
 }

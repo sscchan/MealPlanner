@@ -13,6 +13,7 @@ builder.Services.AddSwaggerGen();
 
 // Dependency injection
 builder.Services.AddSingleton<IDishRepository>(_ => new CsvFileDishRepository(string.Empty));
+builder.Services.AddScoped<IDishDataManagementService, DishDataManagementService>();
 builder.Services.AddScoped<IMealPlannerService, MealPlannerService>();
 
 var app = builder.Build();
