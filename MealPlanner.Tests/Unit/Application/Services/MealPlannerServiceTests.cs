@@ -1,11 +1,6 @@
 ﻿using MealPlanner.Application.Entities;
 using MealPlanner.Application.Services;
 using MealPlanner.Infrastructure.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MealPlanner.Tests.Unit.Application.Services
 {
@@ -13,7 +8,6 @@ namespace MealPlanner.Tests.Unit.Application.Services
     public class MealPlannerServiceTests
     {
         private CsvFileDishRepository _csvFileDishRepository;
-
         private MealPlannerService _mealPlannerService;
 
         [TestInitialize]
@@ -26,11 +20,16 @@ namespace MealPlanner.Tests.Unit.Application.Services
         [TestMethod]
         public async Task GenerateNewMealPlan()
         {
-            // Act
-            MealPlan mealPlan = await _mealPlannerService.GenerateNewMealPlan();
+            // Generate large number of new meal plans to test for possible scenarios where a meal plan cannot be created
+            // due the not having dishes with diverse enough components in the Dishes database.
+            for (int i = 0; i < 1000; i++)
+            {
+                // Act
+                MealPlan mealPlan = await _mealPlannerService.GenerateNewMealPlan();
 
-            // Assert
-            Assert.IsTrue(mealPlan.Meals.Any());
+                // Assert
+                Assert.IsTrue(mealPlan.Meals.Any());
+            }
         }
     }
 }

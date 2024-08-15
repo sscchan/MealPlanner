@@ -30,7 +30,14 @@ namespace MealPlanner.Infrastructure.Repositories
 
         public async IAsyncEnumerable<Dish> GetAll()
         {
-            var csvReaderConfiguration = new CsvConfiguration(CultureInfo.InvariantCulture);
+            var csvReaderConfiguration = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                HasHeaderRecord = true,
+                PrepareHeaderForMatch = x => x.Header.ToLower(),
+                IgnoreBlankLines = true,
+                // Skip creation of a record if all the fields have empty values (which appears as empty line in excel)
+                ShouldSkipRecord = x => x.Row.Parser.Record?.All(field => string.IsNullOrWhiteSpace(field)) ?? false
+            };
 
             using var streamReader = new StreamReader(_csvDataFilePath);
             using var csvReader = new CsvReader(streamReader, csvReaderConfiguration);
@@ -43,11 +50,11 @@ namespace MealPlanner.Infrastructure.Repositories
 
         private Dish toDish(CsvDishDto csvDishDto)
         {
-            string[] dishcomponentSeparatorString = { "," };
-            var dishcomponentStringSplitOptions = StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries;
+            string[] dishComponentsSeparator = { "," };
+            var dishComponentsStringSplitOptions = StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries;
             Func<string, IEnumerable<string>> splitComponentString = (
                 cs => cs
-                    .Split(dishcomponentSeparatorString, dishcomponentStringSplitOptions)
+                    .Split(dishComponentsSeparator, dishComponentsStringSplitOptions)
                     .Where(c => c != "#N/A")
                     .ToList());
 
