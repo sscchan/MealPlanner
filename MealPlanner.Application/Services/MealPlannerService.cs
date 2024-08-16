@@ -1,12 +1,5 @@
 ﻿using MealPlanner.Application.Entities;
 using MealPlanner.Application.Repositories;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MealPlanner.Application.Services
 {
@@ -21,114 +14,178 @@ namespace MealPlanner.Application.Services
             _dishRepository = dishRepository;
             _randomNumberGenerator = new Random();
         }
-        public async Task<MealPlan> GenerateNewMealPlan(uint numberOfDaysToLookBackwardsForRepeats = 3, uint numberOfDaysToForwardPlan = 7, IList<string> initialComponentsToAvoidDuplicates = default)
+
+        public async Task<MealPlan> GenerateMealPlan(
+            int numberOfDaysBeforeDishComponentsCanBeUsedAgain = 3,
+            int numberOfDaysInPlan = 7,
+            IList<string> priorityDishComponents = default,
+            IList<string> prohibitedDishComponents = default,
+            IList<string> prohibitedDishes = default)
         {
+            // Assign empty list for optional ist parameters
+            priorityDishComponents ??= new List<string>();
+            prohibitedDishComponents ??= new List<string>();
+            prohibitedDishes ??= new List<string>();
+
+            var allDishes = await _dishRepository.GetAll().ToListAsync();
+            var availableDishes = allDishes
+                .Where(d => !prohibitedDishes.Contains(d.Name))
+                .Where(d => !prohibitedDishComponents.Intersect(d.CarbohydrateComponents).Any())
+                .Where(d => !prohibitedDishComponents.Intersect(d.ProteinComponents).Any())
+                .Where(d => !prohibitedDishComponents.Intersect(d.VegetableComponents).Any())
+                .Where(d => !prohibitedDishComponents.Intersect(d.FruitComponents).Any())
+                .ToList();
+
             MealPlan mealPlan = new MealPlan(new List<Meal>());
 
-            // Create a custom Dish that contains all of the components that is to be avoid in the beginning of the planning process
-            if (initialComponentsToAvoidDuplicates != null && initialComponentsToAvoidDuplicates.Count() > 0)
+            for (int i = 0; i < numberOfDaysInPlan; i++)
             {
-                var previousMeal = new Meal(
-                    DateOnly.FromDateTime(DateTime.Today.AddDays(-1)),
-                    MealType.DINNER,
-                    // All component types have the avoided components assigned to it. This logic works as long as component names are unique across component types.
-                    [new("PreviousMealDishes", initialComponentsToAvoidDuplicates, initialComponentsToAvoidDuplicates, initialComponentsToAvoidDuplicates, initialComponentsToAvoidDuplicates)]);
-                mealPlan.Add(previousMeal);
-            }
+                var currentDishes = new List<Dish>();
 
-            var availableDishes = await _dishRepository.GetAll().ToListAsync();
-
-            for (int i = 0; i < numberOfDaysToForwardPlan; i++)
-            {
-                var dishes = new List<Dish>();
-
-                // Do not allow repeats of dish components looking backwards
-                var excludedDishes = mealPlan.Meals
-                    .TakeLast((int)numberOfDaysToLookBackwardsForRepeats)
+                var previousDishesWithinLookbackPeriod = mealPlan.Meals
+                    .TakeLast(numberOfDaysBeforeDishComponentsCanBeUsedAgain)
                     .SelectMany(m => m.Dishes)
                     .ToList();
 
-                // Predicate that tests if a potential Dish candidate has any ingredients that are part of any excludedDishes
-                Func<Dish, bool> notContainAlreadyUsedComponents = (dish) =>
+                var previousDishComponentsWithinLookbackPeriod = 
+                    previousDishesWithinLookbackPeriod.SelectMany(d => d.CarbohydrateComponents).Concat(
+                    previousDishesWithinLookbackPeriod.SelectMany(d => d.ProteinComponents)).Concat(
+                    previousDishesWithinLookbackPeriod.SelectMany(d => d.VegetableComponents)).Concat(
+                    previousDishesWithinLookbackPeriod.SelectMany(d => d.FruitComponents)).ToList();
+
+                // Create a copy, as more components will be added to it as we plan each dish in a meal in order to avoid duplicated components within a meal.
+                var dishComponentsToAvoidRepeating = new List<string>(previousDishComponentsWithinLookbackPeriod);
+
+                // Predicate to check if a dish contains any components that we wish to avoid repeats of.
+                Func<Dish, bool> doesNotContainRepeatingComponents = (dish) =>
+                        !dishComponentsToAvoidRepeating.Intersect(dish.CarbohydrateComponents).Any() &&
+                        !dishComponentsToAvoidRepeating.Intersect(dish.ProteinComponents).Any() &&
+                        !dishComponentsToAvoidRepeating.Intersect(dish.VegetableComponents).Any() &&
+                        !dishComponentsToAvoidRepeating.Intersect(dish.FruitComponents).Any();;
+
+                //// Heuristic: Priority components are any components that the user want to see in their plan.
+                //// These components may be components that are on-hand or are on sale.
+                // Available dishes that contains priority components.
+                var highPriorityAvailableDishes = availableDishes
+                    .Where(d =>
+                        priorityDishComponents.Intersect(d.CarbohydrateComponents).Any() ||
+                        priorityDishComponents.Intersect(d.ProteinComponents).Any() ||
+                        priorityDishComponents.Intersect(d.VegetableComponents).Any() ||
+                        priorityDishComponents.Intersect(d.FruitComponents).Any()
+                    ).ToList();
+
+                // Available dishes that does not contain priority components
+                var normalPriorityAvailableDishes = availableDishes.Except(highPriorityAvailableDishes).ToList();
+
+                //// Heuristic: Select dishes base on Carbohydrate first, then exclude Carbohydrates from subsequent dishes.
+                //// This is required because the list of Carbohydrate components are small, and specifying multiple different types of
+                //// Carbohydrate and avoiding repeating component may exhaust all choices.
+                Func<IList<Dish>, Dish?> selectDishWithCarbohydrate = (dishes) =>
                 {
-                    return
-                        dish.CarbohydrateComponents.All(cc => !excludedDishes.SelectMany(d => d.CarbohydrateComponents).Contains(cc)) &&
-                        dish.ProteinComponents.All(pc => !excludedDishes.SelectMany(d => d.ProteinComponents).Contains(pc)) &&
-                        dish.VegetableComponents.All(vc => !excludedDishes.SelectMany(d => d.VegetableComponents).Contains(vc)) &&
-                        dish.FruitComponents.All(fc => !excludedDishes.SelectMany(d => d.FruitComponents).Contains(fc));
+                    return PickRandomOrDefault(dishes
+                        .Where(dish => dish.CarbohydrateComponents.Any())
+                        .Where(doesNotContainRepeatingComponents)
+                        .ToList());
                 };
 
-                // Predicate taht tests if a dish does not contain carbohydrate components 
-                Func<Dish, bool> containNoCarbohydrates = (dish) => !dish.CarbohydrateComponents.Any();
+                var dishWithCarbohydrate = selectDishWithCarbohydrate(highPriorityAvailableDishes) ?? selectDishWithCarbohydrate(normalPriorityAvailableDishes);
 
-                // Function to pick a random dish from a list.
-                Func<IList<Dish>, Dish> pickRandom = (d) => d[_randomNumberGenerator.Next(0, d.Count - 1)];
+                currentDishes.Add(dishWithCarbohydrate);
+                dishComponentsToAvoidRepeating.AddRange(GetComponents(dishWithCarbohydrate));
 
-                // Select Dishes with Carbohydrate
-                var dishesWithCarbohydrate = availableDishes
-                    .Where(d => d.CarbohydrateComponents.Any())
-                    .Where(notContainAlreadyUsedComponents)
-                    .ToList();
-                var dishWithCarbohydrate = pickRandom(dishesWithCarbohydrate);
-
-                dishes.Add(dishWithCarbohydrate);
-                excludedDishes.Add(dishWithCarbohydrate);
+                // Predicate that tests if a dish does not contain carbohydrate components 
+                Func<Dish, bool> doesNotContainCarbohydrates = (dish) => !dish.CarbohydrateComponents.Any();
 
                 // Select Dishes with Protein if required
-                if (dishes.All(d => !d.ProteinComponents.Any()))
+                if (currentDishes.All(d => !d.ProteinComponents.Any()))
                 {
-                    var dishesWithProtein = availableDishes
-                            .Where(d => d.ProteinComponents.Any()) // Contains Protein
-                            .Where(containNoCarbohydrates) // Does NOT contains Carbohydrate to preserve options for future dishes (due to the low number of carbohydrate options)
-                            .Where(notContainAlreadyUsedComponents)
-                            .ToList();
-                    var dishWithProtein = pickRandom(dishesWithProtein);
+                    Func<IList<Dish>, Dish?> selectDishWithProtein = (dishes) =>
+                    {
+                        return PickRandomOrDefault(dishes
+                            .Where(dish => dish.ProteinComponents.Any())
+                            .Where(doesNotContainCarbohydrates)
+                            .Where(doesNotContainRepeatingComponents)
+                            .ToList());
+                    };
 
-                    dishes.Add(dishWithProtein);
-                    excludedDishes.Add(dishWithProtein);
+                    var dishesWithProtein = selectDishWithProtein(highPriorityAvailableDishes) ?? selectDishWithProtein(normalPriorityAvailableDishes);
+
+                    currentDishes.Add(dishesWithProtein);
+                    dishComponentsToAvoidRepeating.AddRange(GetComponents(dishesWithProtein));
                 }
 
-                if (dishes.All(d => !d.VegetableComponents.Any()))
+                // Select Dishes with Vegetable if required
+                if (currentDishes.All(d => !d.VegetableComponents.Any()))
                 {
-                    // Select Dishes with Vegetables if required
-                    var dishesWithVegetables = availableDishes
-                                .Where(d => d.VegetableComponents.Any()) // Contains Vegetables
-                                .Where(containNoCarbohydrates) // Does NOT contains Carbohydrate to preserve options for future dishes (due to the low number of carbohydrate options)
-                                .Where(notContainAlreadyUsedComponents)
-                                .ToList();
+                    Func<IList<Dish>, Dish?> selectDishWithVegetable = (dishes) =>
+                    {
+                        return PickRandomOrDefault(dishes
+                            .Where(dish => dish.VegetableComponents.Any())
+                            .Where(doesNotContainCarbohydrates)
+                            .Where(doesNotContainRepeatingComponents)
+                            .ToList());
+                    };
 
-                    var dishWithVegetables = pickRandom(dishesWithVegetables);
+                    var dishWithVegetable = selectDishWithVegetable(highPriorityAvailableDishes) ?? selectDishWithVegetable(normalPriorityAvailableDishes);
 
-                    dishes.Add(dishWithVegetables);
-                    excludedDishes.Add(dishWithVegetables);
+                    currentDishes.Add(dishWithVegetable);
+                    dishComponentsToAvoidRepeating.AddRange(GetComponents(dishWithVegetable));
                 }
 
-                // Select Dishes with Fruits if required
-                if (dishes.All(d => !d.FruitComponents.Any()))
+                // Select Dishes with Vegetable if required
+                if (currentDishes.All(d => !d.FruitComponents.Any()))
                 {
-                    var dishesWithFruit = availableDishes
-                        .Where(d => d.FruitComponents.Any()) // Contains Fruit
-                        .Where(containNoCarbohydrates) // Does NOT contains Carbohydrate to preserve options for future dishes (due to the low number of carbohydrate options)
-                        .Where(notContainAlreadyUsedComponents)
-                        .ToList();
-                    var dishWithFruit = pickRandom(dishesWithFruit);
+                    Func<IList<Dish>, Dish?> selectDishWithFruit = (dishes) =>
+                    {
+                        return PickRandomOrDefault(dishes
+                            .Where(dish => dish.FruitComponents.Any())
+                            .Where(doesNotContainCarbohydrates)
+                            .Where(doesNotContainRepeatingComponents)
+                            .ToList());
+                    };
 
-                    dishes.Add(dishWithFruit);
-                    excludedDishes.Add(dishWithFruit);
+                    var dishWithFruit = selectDishWithFruit(highPriorityAvailableDishes) ?? selectDishWithFruit(normalPriorityAvailableDishes);
+
+                    currentDishes.Add(dishWithFruit);
+                    dishComponentsToAvoidRepeating.AddRange(GetComponents(dishWithFruit));
                 }
 
-                var meal = new Meal(
-                    DateOnly.FromDateTime(DateTime.Today.AddDays(i)),
-                    MealType.DINNER,
-                    dishes);
-
-                mealPlan.Add(meal);
+                mealPlan.Add(
+                    new Meal(
+                        DateOnly.FromDateTime(DateTime.Today.AddDays(i)),
+                        MealType.DINNER,
+                        currentDishes));
             }
 
-            // Remove entry used to exclude dish components in the early part of the planning
-            mealPlan.RemoveIfExists(DateOnly.FromDateTime(DateTime.Today.AddDays(-1)), MealType.DINNER);
-
             return mealPlan;
+        }
+
+        /// <summary>
+        /// Randomly select an element from a list, or the default if the list is empty or null
+        /// </summary>
+        private T? PickRandomOrDefault<T>(IList<T> items)
+        {
+            if (items != null && items.Count > 0)
+            {
+                return items[_randomNumberGenerator.Next(0, items.Count - 1)];
+            }
+            else
+            {
+                return default;
+            }
+        }
+
+        /// <summary>
+        /// Returns all components of a dish in a single List
+        /// </summary>
+        private IList<string> GetComponents(Dish dish)
+        {
+            return
+                dish.CarbohydrateComponents.Concat(
+                dish.ProteinComponents.Concat(
+                dish.VegetableComponents.Concat(
+                dish.FruitComponents)))
+                .ToList();
         }
     }
 }

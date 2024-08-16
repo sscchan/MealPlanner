@@ -17,14 +17,25 @@ namespace MealPlanner.WebApplication.Controllers
             _mealPlannerService = mealPlannerService;
         }
 
-        [HttpGet]
+        /// <summary>
+        /// Create a meal plan.
+        /// </summary>
+        /// <returns>A new meal plan</returns>
+        [HttpPost]
         [Route("")]
-        [ProducesResponseType(typeof(IList<GetMealPlansResponseDto>), 200)]
-        public async Task<IActionResult> GetMealPlans([FromQuery] string[] avoidComponents)
+        [Produces("application/json")]
+        [ProducesResponseType(typeof(IList<PostMealPlansResponseDto>), 200)]
+        public async Task<IActionResult> PostMealPlans([FromBody] PostMealPlansRequestDto request)
         {
-            var mealPlan = await _mealPlannerService.GenerateNewMealPlan(initialComponentsToAvoidDuplicates: avoidComponents.ToList());
+            var mealPlan = await _mealPlannerService.GenerateMealPlan(
+                    numberOfDaysBeforeDishComponentsCanBeUsedAgain: request.NumberOfDaysBeforeDishComponentsCanBeUsedAgain,
+                    numberOfDaysInPlan: request.NumberOfDaysInPlan,
+                    priorityDishComponents: request.PriorityDishComponents,
+                    prohibitedDishComponents: request.ProhibitedDishComponents,
+                    prohibitedDishes: request.ProhibitedDishes
+                );
 
-            var getMealPlansResponse = mealPlan.Meals.Select(m => new GetMealPlansResponseDto(
+            var getMealPlansResponse = mealPlan.Meals.Select(m => new PostMealPlansResponseDto(
                 date: m.Date,
                 dishNames: string.Join(" | ", m.Dishes.Select(d => d.Name)),
                 components: 
