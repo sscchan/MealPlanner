@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>a3d12167-60e9-415c-a0a3-2444742758b9</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerFileTag>mealplanner</DockerFileTag>
   </PropertyGroup>
 
   <PropertyGroup>
